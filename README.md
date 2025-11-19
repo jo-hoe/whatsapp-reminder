@@ -77,6 +77,29 @@ helm uninstall whatsapp-reminder
 
 The Helm chart configures a Kubernetes CronJob that runs on a schedule (default: every hour). You can customize the schedule and other settings in `values.yaml`.
 
+**Job Retry Configuration:**
+
+You can configure how the job behaves when it fails:
+
+```bash
+# Configure retry behavior
+helm install whatsapp-reminder ./charts/whatsapp-reminder \
+  --set job.backoffLimit=5 \              # Retry up to 5 times on failure (default: 3)
+  --set job.activeDeadlineSeconds=1200 \  # Timeout after 20 minutes (default: 600)
+  ...other options...
+```
+
+Or set in `values.yaml`:
+
+```yaml
+job:
+  backoffLimit: 5           # Number of retries before considering job as failed
+  activeDeadlineSeconds: 1200  # Maximum time for job execution (in seconds)
+```
+
+- **backoffLimit**: Number of times the job will retry if it fails (default: 3)
+- **activeDeadlineSeconds**: Maximum time limit for the entire job including all retries (default: 600 seconds / 10 minutes)
+
 #### Local K3D Testing
 
 For local development and testing with K3D:
