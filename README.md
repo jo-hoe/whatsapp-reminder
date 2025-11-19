@@ -221,7 +221,7 @@ Project uses `golangci-lint` for linting.
 make lint
 ```
 
-# Or directly
+#### Or directly
 
 ```bash
 golangci-lint run ./...

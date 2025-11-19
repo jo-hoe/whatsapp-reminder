@@ -2,6 +2,7 @@ package management
 
 import (
 	"fmt"
+	"log"
 	"reflect"
 	"sort"
 	"time"
@@ -33,25 +34,50 @@ func (service *ReminderManagementService) Process() error {
 		return fmt.Errorf("could not read config from sheet %+v", err)
 	}
 
+	totalMessages := len(configs)
+	log.Printf("total messages seen: %d", totalMessages)
+
+	// Count already processed and not yet due messages
+	alreadyProcessed := 0
+	notYetDue := 0
+
 	// get all items which should be processed
 	itemsToProcess := make([]dto.WhatsappReminderConfig, 0)
 	for _, config := range configs {
 		// skip items which are already processed or item which are not due yet
-		if !config.ProcessTime.IsZero() || config.DueTime.After(time.Now()) {
+		if !config.ProcessTime.IsZero() {
+			alreadyProcessed++
+			continue
+		}
+		if config.DueTime.After(time.Now()) {
+			notYetDue++
 			continue
 		}
 		itemsToProcess = append(itemsToProcess, config.WhatsappReminderConfig)
 	}
 
-	// get all actually processed items
-	processedItems := service.reminder.Remind(itemsToProcess)
-	now := time.Now().In(&service.defaultLocation)
-	for _, processedItem := range processedItems {
-		for idx := range configs {
-			if reflect.DeepEqual(processedItem, configs[idx].WhatsappReminderConfig) {
-				configs[idx].ProcessTime = now
+	messagesToProcess := len(itemsToProcess)
+	log.Printf("messages needing processing: %d (already processed: %d, not yet due: %d)",
+		messagesToProcess, alreadyProcessed, notYetDue)
+
+	if messagesToProcess > 0 {
+		// get all actually processed items
+		processedItems := service.reminder.Remind(itemsToProcess)
+
+		successfullyProcessed := len(processedItems)
+		failed := messagesToProcess - successfullyProcessed
+		log.Printf("processing complete: %d successful, %d failed", successfullyProcessed, failed)
+
+		now := time.Now().In(&service.defaultLocation)
+		for _, processedItem := range processedItems {
+			for idx := range configs {
+				if reflect.DeepEqual(processedItem, configs[idx].WhatsappReminderConfig) {
+					configs[idx].ProcessTime = now
+				}
 			}
 		}
+	} else {
+		log.Println("no messages to process at this time")
 	}
 
 	configs = service.filterItemByRetention(configs)

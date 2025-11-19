@@ -44,17 +44,30 @@ func NewEmailReminderService(
 func (service *EmailReminderService) Remind(messageConfigs []dto.WhatsappReminderConfig) (result []dto.WhatsappReminderConfig) {
 	configsGroupedByMail := groupByMailAddress(messageConfigs)
 
-	result = make([]dto.WhatsappReminderConfig, 0)
+	totalRecipients := len(configsGroupedByMail)
+	log.Printf("sending emails to %d recipient(s) with %d total reminder(s)", totalRecipients, len(messageConfigs))
 
-	for _, configs := range configsGroupedByMail {
+	result = make([]dto.WhatsappReminderConfig, 0)
+	successCount := 0
+	failureCount := 0
+
+	for mailAddress, configs := range configsGroupedByMail {
 		mailRequest := service.messageConfigsToMailRequest(configs)
+		log.Printf("sending %d reminder(s) to %s", len(configs), mailAddress)
+
 		_, err := service.mailClient.SendMail(service.ctx, mailRequest)
 		if err != nil {
-			log.Printf("could not send due to error %v: %v", err, configs)
+			failureCount += len(configs)
+			log.Printf("failed to send %d reminder(s) to %s: %v", len(configs), mailAddress, err)
 		} else {
+			successCount += len(configs)
+			log.Printf("successfully sent %d reminder(s) to %s", len(configs), mailAddress)
 			result = append(result, configs...)
 		}
 	}
+
+	log.Printf("email sending summary: %d successful, %d failed out of %d total reminder(s)",
+		successCount, failureCount, len(messageConfigs))
 
 	return result
 }
