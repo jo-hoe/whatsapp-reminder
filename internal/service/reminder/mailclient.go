@@ -133,26 +133,20 @@ func (c *MailClient) SendMail(ctx context.Context, request MailRequest) (*MailRe
 
 // HealthCheck performs a health check against the mail service
 func (c *MailClient) HealthCheck(ctx context.Context) error {
-	url := c.baseURL + "/healthz"
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	rootReq, err := http.NewRequestWithContext(ctx, http.MethodGet, c.baseURL+"/", nil)
 	if err != nil {
-		return fmt.Errorf("failed to create health check request: %w", err)
+		return fmt.Errorf("failed to create root health check request: %w", err)
 	}
 
-	resp, err := c.httpClient.Do(req)
+	rootResp, err := c.httpClient.Do(rootReq)
 	if err != nil {
-		return fmt.Errorf("health check failed: %w", err)
+		return fmt.Errorf("root health check failed: %w", err)
 	}
-	defer func() {
-		if closeErr := resp.Body.Close(); closeErr != nil {
-			// Log error but don't override the main error
-			fmt.Printf("failed to close response body: %v\n", closeErr)
-		}
-	}()
+	defer rootResp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("health check failed with status %d: %s", resp.StatusCode, string(body))
+	if rootResp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(rootResp.Body)
+		return fmt.Errorf("root health check failed with status %d: %s", rootResp.StatusCode, string(body))
 	}
 
 	return nil
