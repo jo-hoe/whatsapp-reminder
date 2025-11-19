@@ -1,0 +1,14 @@
+apiVersion: v1
+entries:
+  whatsapp-reminder:
+  - apiVersion: v2
+    appVersion: 1.0.0
+    created: "2025-11-19T20:06:17.603855344Z"
+    description: A Helm chart for WhatsApp Reminder scheduled execution
+    digest: 50bda831c5410c9471ae99c5490696e457002839dfc91e612cf9a15a36cb5d0f
+    name: whatsapp-reminder
+    type: application
+    urls:
+    - https://github.com/jo-hoe/whatsapp-reminder/releases/download/whatsapp-reminder-0.1.0/whatsapp-reminder-0.1.0.tgz
+    version: 0.1.0
+generated: "2025-11-19T20:06:17.603860443Z"
