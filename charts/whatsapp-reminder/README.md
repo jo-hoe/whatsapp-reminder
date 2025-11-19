@@ -13,7 +13,7 @@ A Helm chart for WhatsApp Reminder scheduled execution
 | config.app.retentionTime | string | `"24h"` | How long to retain processed reminders (duration format: 24h, 48h, etc.) |
 | config.app.timeLocation | string | `"UTC"` | Timezone for reminder processing (IANA timezone format) |
 | config.email.serviceUrl | string | `"http://go-mail-service:80"` | URL of the go-mail-service for sending emails |
-| config.googleSheets.serviceAccountFile | string | `"/run/secrets/service-account.json"` | Path where the service account JSON file will be mounted |
+| config.googleSheets.serviceAccountFile | string | `"/app/secrets/service-account.json"` | Path where the service account JSON file will be mounted |
 | config.googleSheets.sheetName | string | `""` | Name of the sheet within the spreadsheet |
 | config.googleSheets.spreadsheetId | string | `""` | Google Sheets spreadsheet ID to read reminder data from |
 | failedJobsHistoryLimit | int | `1` | Number of failed finished jobs to retain |
@@ -22,6 +22,8 @@ A Helm chart for WhatsApp Reminder scheduled execution
 | image.repository | string | `"ghcr.io/jo-hoe/whatsapp-reminder"` |  |
 | image.tag | string | `""` |  |
 | imagePullSecrets | list | `[]` |  |
+| job.activeDeadlineSeconds | int | `300` | Deadline in seconds for the job to complete. If the job doesn't complete within this time, it will be terminated. Default is 300 seconds (5 minutes). Set to null to disable. |
+| job.backoffLimit | int | `2` | Number of retries before considering a Job as failed. Default is 3. |
 | nameOverride | string | `""` |  |
 | nodeSelector | object | `{}` |  |
 | podAnnotations | object | `{}` |  |
@@ -32,6 +34,7 @@ A Helm chart for WhatsApp Reminder scheduled execution
 | secrets.emailOriginAddress | string | `""` |  |
 | secrets.emailOriginName | string | `""` |  |
 | secrets.serviceAccountJson | string | `""` |  |
+| secrets.serviceAccountJsonBase64 | string | `""` |  |
 | securityContext | object | `{}` |  |
 | serviceAccount.annotations | object | `{}` |  |
 | serviceAccount.automount | bool | `true` |  |
