@@ -2,6 +2,8 @@
 
 [![Test Status](https://github.com/jo-hoe/whatsapp-reminder/workflows/test/badge.svg)](https://github.com/jo-hoe/whatsapp-reminder/actions?workflow=test)
 [![Lint Status](https://github.com/jo-hoe/whatsapp-reminder/workflows/lint/badge.svg)](https://github.com/jo-hoe/whatsapp-reminder/actions?workflow=lint)
+[![Go Report Card](https://goreportcard.com/badge/github.com/jo-hoe/whatsapp-reminder)](https://goreportcard.com/report/github.com/jo-hoe/whatsapp-reminder)
+[![Coverage Status](https://coveralls.io/repos/github/jo-hoe/whatsapp-reminder/badge.svg?branch=main)](https://coveralls.io/github/jo-hoe/whatsapp-reminder?branch=main)
 
 A Go application that sends WhatsApp reminders based on data from Google Sheets. Supports multiple deployment methods: CLI, Container, and Kubernetes.
 
