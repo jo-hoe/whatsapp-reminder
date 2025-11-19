@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "whatsapp-reminder.fullname" . }}-config
+  labels:
+    {{- include "whatsapp-reminder.labels" . | nindent 4 }}
+data:
+  config.yaml: |
+    googleSheets:
+      spreadsheetId: {{ .Values.config.googleSheets.spreadsheetId | quote }}
+      sheetName: {{ .Values.config.googleSheets.sheetName | quote }}
+      serviceAccountFile: {{ .Values.config.googleSheets.serviceAccountFile | quote }}
+    email:
+      serviceUrl: {{ .Values.config.email.serviceUrl | quote }}
+    app:
+      timeLocation: {{ .Values.config.app.timeLocation | quote }}
+      retentionTime: {{ .Values.config.app.retentionTime | quote }}
+      logLevel: {{ .Values.config.app.logLevel | quote }}

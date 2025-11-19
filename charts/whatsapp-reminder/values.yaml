@@ -1,0 +1,113 @@
+# Default values for whatsapp-reminder.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# -- cron expression for scheduling of job (default: every hour)
+schedule: "0 * * * *"
+
+# -- Number of successful finished jobs to retain
+successfulJobsHistoryLimit: 3
+
+# -- Number of failed finished jobs to retain
+failedJobsHistoryLimit: 1
+
+# Job retry configuration
+job:
+  # -- Number of retries before considering a Job as failed. Default is 3.
+  backoffLimit: 2
+  # -- Deadline in seconds for the job to complete. If the job doesn't complete within this time, it will be terminated. Default is 300 seconds (5 minutes). Set to null to disable.
+  activeDeadlineSeconds: 300
+
+image:
+  repository: ghcr.io/jo-hoe/whatsapp-reminder
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Automatically mount a ServiceAccount's API credentials?
+  automount: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# Application configuration
+# This will be mounted as config.yaml in the container
+config:
+  # Google Sheets configuration
+  googleSheets:
+    # -- Google Sheets spreadsheet ID to read reminder data from
+    spreadsheetId: ""
+    # -- Name of the sheet within the spreadsheet
+    sheetName: ""
+    # -- Path where the service account JSON file will be mounted
+    serviceAccountFile: "/app/secrets/service-account.json"
+  
+  # Email configuration (go-mail-service)
+  email:
+    # -- URL of the go-mail-service for sending emails
+    serviceUrl: "http://go-mail-service:80"
+    # originAddress and originName are now in secrets below
+  
+  # Application configuration
+  app:
+    # -- Timezone for reminder processing (IANA timezone format)
+    timeLocation: "UTC"
+    # -- How long to retain processed reminders (duration format: 24h, 48h, etc.)
+    retentionTime: "24h"
+    # -- Log level for application (debug, info, warn, error)
+    logLevel: "info"
+
+# Secret configuration
+secrets:
+  # -- Service account JSON content as a base64-encoded string (recommended for CI/CD and .env files). This avoids shell escaping issues with special characters and literal \n in the private_key field. Provide the base64-encoded JSON, for example: --set secrets.serviceAccountJsonBase64=BASE64_ENCODED_JSON
+  serviceAccountJsonBase64: ""
+  
+  # -- Service account JSON content as a plain string (alternative to serviceAccountJsonBase64). Provide the entire JSON content as a single-line string, for example: --set secrets.serviceAccountJson='{"type":"service_account","project_id":"..."}'. Or use --set-file secrets.serviceAccountJson=./service-account.json. Note: This may have issues with special characters in shell environments.
+  serviceAccountJson: ""
+  
+  # -- Email origin address (stored as secret for security). You can provide this via --set secrets.emailOriginAddress=your-email@example.com
+  emailOriginAddress: ""
+  
+  # -- Email origin name (stored as secret for security). You can provide this via --set secrets.emailOriginName="Your Name"
+  emailOriginName: ""

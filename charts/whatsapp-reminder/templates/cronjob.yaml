@@ -1,0 +1,103 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "whatsapp-reminder.fullname" . }}
+  labels:
+    {{- include "whatsapp-reminder.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.schedule | quote }}
+  successfulJobsHistoryLimit: {{ .Values.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.failedJobsHistoryLimit }}
+  jobTemplate:
+    metadata:
+      labels:
+        {{- include "whatsapp-reminder.labels" . | nindent 8 }}
+    spec:
+      {{- if .Values.job.backoffLimit }}
+      backoffLimit: {{ .Values.job.backoffLimit }}
+      {{- end }}
+      {{- if .Values.job.activeDeadlineSeconds }}
+      activeDeadlineSeconds: {{ .Values.job.activeDeadlineSeconds }}
+      {{- end }}
+      template:
+        metadata:
+          annotations:
+            checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+            {{- with .Values.podAnnotations }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          labels:
+            {{- include "whatsapp-reminder.labels" . | nindent 12 }}
+            {{- with .Values.podLabels }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+        spec:
+          {{- with .Values.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          serviceAccountName: {{ include "whatsapp-reminder.serviceAccountName" . }}
+          securityContext:
+            {{- toYaml .Values.podSecurityContext | nindent 12 }}
+          restartPolicy: OnFailure
+          containers:
+            - name: {{ .Chart.Name }}
+              securityContext:
+                {{- toYaml .Values.securityContext | nindent 16 }}
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              env:
+                - name: CONFIG_PATH
+                  value: /run/config/config.yaml
+                {{- if .Values.secrets.emailOriginAddress }}
+                - name: EMAIL_ORIGIN_ADDRESS
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "whatsapp-reminder.fullname" . }}-secret
+                      key: email-origin-address
+                {{- end }}
+                {{- if .Values.secrets.emailOriginName }}
+                - name: EMAIL_ORIGIN_NAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "whatsapp-reminder.fullname" . }}-secret
+                      key: email-origin-name
+                {{- end }}
+              resources:
+                {{- toYaml .Values.resources | nindent 16 }}
+              volumeMounts:
+                - mountPath: /run/config
+                  name: config-volume
+                  readOnly: true
+                {{- if or .Values.secrets.serviceAccountJson .Values.secrets.serviceAccountJsonBase64 }}
+                - mountPath: /app/secrets
+                  name: secrets-volume
+                  readOnly: true
+                {{- end }}
+          volumes:
+            - name: config-volume
+              configMap:
+                name: {{ include "whatsapp-reminder.fullname" . }}-config
+                items:
+                  - key: config.yaml
+                    path: config.yaml
+            {{- if or .Values.secrets.serviceAccountJson .Values.secrets.serviceAccountJsonBase64 }}
+            - name: secrets-volume
+              secret:
+                secretName: {{ include "whatsapp-reminder.fullname" . }}-secret
+                items:
+                  - key: service-account.json
+                    path: service-account.json
+            {{- end }}
+          {{- with .Values.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.affinity }}
+          affinity:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
