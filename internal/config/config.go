@@ -103,13 +103,7 @@ func (c *Config) validate() error {
 	if c.Email.ServiceURL == "" {
 		return fmt.Errorf("email.serviceUrl is required")
 	}
-	// Email origin can come from env vars or config
-	if c.GetEmailOriginAddress() == "" {
-		return fmt.Errorf("email.originAddress is required (via config or EMAIL_ORIGIN_ADDRESS env var)")
-	}
-	if c.GetEmailOriginName() == "" {
-		return fmt.Errorf("email.originName is required (via config or EMAIL_ORIGIN_NAME env var)")
-	}
+	// Email origin address and name are optional - mailserver will use its defaults if not provided
 
 	// Validate duration formats
 	if _, err := time.ParseDuration(c.Schedule.Interval); err != nil {

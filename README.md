@@ -29,8 +29,9 @@ googleSheets:
 # Email configuration (go-mail-service)
 email:
   serviceUrl: "http://localhost:80"  # URL of the go-mail-service
-  originAddress: "your_email@example.com"
-  originName: "Your Name"
+  # Optional: originAddress and originName (if not set, mail server defaults will be used)
+  # originAddress: "your_email@example.com"
+  # originName: "Your Name"
 
 # Scheduling configuration (container only)
 schedule:
@@ -53,7 +54,13 @@ Deploy to Kubernetes using Helm for scheduled execution:
 ```bash
 # Install the Helm chart
 
-# Option 1: Using a service account JSON file
+# Option 1: Using a service account JSON file (minimal setup, uses mail server defaults)
+helm install whatsapp-reminder ./charts/whatsapp-reminder \
+  --set config.googleSheets.spreadsheetId=YOUR_SPREADSHEET_ID \
+  --set config.googleSheets.sheetName=YOUR_SHEET_NAME \
+  --set-file secrets.serviceAccountJson=./service-account.json
+
+# Option 2: With custom email origin settings
 helm install whatsapp-reminder ./charts/whatsapp-reminder \
   --set config.googleSheets.spreadsheetId=YOUR_SPREADSHEET_ID \
   --set config.googleSheets.sheetName=YOUR_SHEET_NAME \
@@ -61,12 +68,10 @@ helm install whatsapp-reminder ./charts/whatsapp-reminder \
   --set secrets.emailOriginName="Your Name" \
   --set-file secrets.serviceAccountJson=./service-account.json
 
-# Option 2: Using service account JSON as a string (useful for CI/CD)
+# Option 3: Using service account JSON as a string (useful for CI/CD)
 helm install whatsapp-reminder ./charts/whatsapp-reminder \
   --set config.googleSheets.spreadsheetId=YOUR_SPREADSHEET_ID \
   --set config.googleSheets.sheetName=YOUR_SHEET_NAME \
-  --set secrets.emailOriginAddress=your-email@example.com \
-  --set secrets.emailOriginName="Your Name" \
   --set secrets.serviceAccountJson='{"type":"service_account","project_id":"your-project",...}'
 
 # Upgrade an existing deployment
@@ -128,11 +133,11 @@ The Makefile reads configuration from a `.env` file. Required variables:
 
 - `SPREADSHEET_ID` - Your Google Sheets spreadsheet ID
 - `SHEET_NAME` - Name of the sheet to read from
-- `EMAIL_ORIGIN_ADDRESS` - Email address to send from
-- `EMAIL_ORIGIN_NAME` - Display name for emails
 
 Optional variables (see `.env.example` for defaults):
 
+- `EMAIL_ORIGIN_ADDRESS` - Email address to send from (if not set, mail server defaults will be used)
+- `EMAIL_ORIGIN_NAME` - Display name for emails (if not set, mail server defaults will be used)
 - `SCHEDULE` - Cron expression for job scheduling
 - `TIME_LOCATION` - Timezone for processing
 - `RETENTION_TIME` - How long to keep processed reminders

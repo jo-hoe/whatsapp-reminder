@@ -11,8 +11,9 @@ googleSheets:
 # Email configuration (go-mail-service)
 email:
   serviceUrl: "http://localhost:80"  # URL of the go-mail-service
-  originAddress: "your_email@example.com"
-  originName: "Your Name"
+  # Optional: originAddress and originName (if not set, mail server defaults will be used)
+  # originAddress: "your_email@example.com"
+  # originName: "Your Name"
 
 # Scheduling configuration
 schedule:

@@ -36,9 +36,9 @@ start-k3d: start-cluster push-k3d ## start k3d cluster and deploy local code
 		--set image.tag=${IMAGE_VERSION} \
 		--set config.googleSheets.spreadsheetId=$(SPREADSHEET_ID) \
 		--set-string config.googleSheets.sheetName="$(SHEET_NAME)" \
-		--set secrets.emailOriginAddress=$(EMAIL_ORIGIN_ADDRESS) \
-		--set-string secrets.emailOriginName="$(EMAIL_ORIGIN_NAME)" \
 		--set secrets.serviceAccountJsonBase64=$(SERVICE_ACCOUNT_JSON_BASE64) \
+		$(if $(EMAIL_ORIGIN_ADDRESS),--set secrets.emailOriginAddress=$(EMAIL_ORIGIN_ADDRESS),) \
+		$(if $(EMAIL_ORIGIN_NAME),--set-string secrets.emailOriginName="$(EMAIL_ORIGIN_NAME)",) \
 		$(if $(SCHEDULE),--set-string schedule="$(SCHEDULE)",) \
 		$(if $(TIME_LOCATION),--set-string config.app.timeLocation="$(TIME_LOCATION)",) \
 		$(if $(RETENTION_TIME),--set config.app.retentionTime=$(RETENTION_TIME),) \

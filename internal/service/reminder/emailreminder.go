@@ -87,10 +87,17 @@ func groupByMailAddress(messageConfigs []dto.WhatsappReminderConfig) map[string]
 
 func (service *EmailReminderService) messageConfigsToMailRequest(messageConfigs []dto.WhatsappReminderConfig) MailRequest {
 	result := MailRequest{
-		To:       messageConfigs[0].MailAddress,
-		Subject:  "WhatsApp Reminder",
-		From:     service.originAddress,
-		FromName: service.originName,
+		To:      messageConfigs[0].MailAddress,
+		Subject: "WhatsApp Reminder",
+	}
+
+	// Only set From and FromName if they are provided (non-empty)
+	// If empty, the mail server will use its configured defaults
+	if service.originAddress != "" {
+		result.From = service.originAddress
+	}
+	if service.originName != "" {
+		result.FromName = service.originName
 	}
 
 	// build content
