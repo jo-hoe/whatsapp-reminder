@@ -106,8 +106,8 @@ secrets:
   # -- Service account JSON content as a plain string (alternative to serviceAccountJsonBase64). Provide the entire JSON content as a single-line string, for example: --set secrets.serviceAccountJson='{"type":"service_account","project_id":"..."}'. Or use --set-file secrets.serviceAccountJson=./service-account.json. Note: This may have issues with special characters in shell environments.
   serviceAccountJson: ""
   
-  # -- Email origin address (stored as secret for security). You can provide this via --set secrets.emailOriginAddress=your-email@example.com
+  # -- Email origin address (stored as secret for security). This is optional as the mail server sets a default. You can provide this via --set secrets.emailOriginAddress=your-email@example.com
   emailOriginAddress: ""
   
-  # -- Email origin name (stored as secret for security). You can provide this via --set secrets.emailOriginName="Your Name"
+  # -- Email origin name (stored as secret for security). This is optional as the mail server sets a default. You can provide this via --set secrets.emailOriginName="Your Name"
   emailOriginName: ""
