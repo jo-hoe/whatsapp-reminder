@@ -20,9 +20,11 @@ func (m *MockMailClient) SendMail(ctx context.Context, request MailRequest) (*Ma
 	}
 	m.SentMails = append(m.SentMails, request)
 	return &MailResponse{
-		To:      request.To,
-		Subject: request.Subject,
-		Message: "Email sent successfully",
+		To:          request.To,
+		Subject:     request.Subject,
+		HtmlContent: request.HtmlContent,
+		From:        request.From,
+		FromName:    request.FromName,
 	}, nil
 }
 
