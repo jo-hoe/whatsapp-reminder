@@ -123,15 +123,10 @@ func validateAndHealthCheck(ctx context.Context, appConfig *app.AppConfig) error
 	if appConfig.MailServiceURL == "" {
 		return fmt.Errorf("mail service URL is required")
 	}
-	if appConfig.OriginAddress == "" {
-		return fmt.Errorf("origin address is required")
-	}
-	if appConfig.OriginName == "" {
-		return fmt.Errorf("origin name is required")
-	}
 	if len(appConfig.ServiceAccountSecret) == 0 {
 		return fmt.Errorf("service account secret is required")
 	}
+	// Note: OriginAddress and OriginName are optional - mail service will use defaults if not provided
 
 	log.Println("configuration validated successfully")
 
