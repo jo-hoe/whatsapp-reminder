@@ -71,8 +71,9 @@ func (service *ReminderManagementService) Process() error {
 		now := time.Now().In(&service.defaultLocation)
 		for _, processedItem := range processedItems {
 			for idx := range configs {
-				if reflect.DeepEqual(processedItem, configs[idx].WhatsappReminderConfig) {
+				if configs[idx].ProcessTime.IsZero() && reflect.DeepEqual(processedItem, configs[idx].WhatsappReminderConfig) {
 					configs[idx].ProcessTime = now
+					break
 				}
 			}
 		}

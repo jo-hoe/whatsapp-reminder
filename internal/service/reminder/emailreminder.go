@@ -117,7 +117,7 @@ func (service *EmailReminderService) messageConfigsToMailRequest(messageConfigs 
 			number = "no number provided"
 		}
 
-		stringBuilder.WriteString(fmt.Sprintf(mailItem, whatsappLink, htmlEscapedText, number))
+		fmt.Fprintf(&stringBuilder, mailItem, whatsappLink, htmlEscapedText, number)
 	}
 	stringBuilder.WriteString(mailEnd)
 	result.HtmlContent = stringBuilder.String()

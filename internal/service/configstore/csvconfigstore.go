@@ -31,8 +31,8 @@ func NewCSVConfigStore(openReader openReader, openWriter openWriter, defaultLoca
 }
 
 func (service *CSVConfigStore) OverwriteConfigs(configs []ConfigEntry) error {
-	service.mutex.RLock()
-	defer service.mutex.RUnlock()
+	service.mutex.Lock()
+	defer service.mutex.Unlock()
 
 	writer, err := service.openWriter()
 	if err != nil {

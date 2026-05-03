@@ -161,6 +161,48 @@ func TestReminderManagementService_Process_Retention(t *testing.T) {
 	}
 }
 
+func TestReminderManagementService_Process_DuplicateRows(t *testing.T) {
+	now := time.Now()
+
+	duplicateConfig := dto.WhatsappReminderConfig{
+		PhoneNumber: "0123456789",
+		MailAddress: "test@mail.com",
+		MessageText: "hallo",
+	}
+	duplicateItem1 := configstore.ConfigEntry{
+		CreationTime:           now.Add(-72 * time.Hour),
+		ProcessTime:            time.Time{},
+		DueTime:                now.Add(-1 * time.Hour),
+		WhatsappReminderConfig: duplicateConfig,
+	}
+	duplicateItem2 := configstore.ConfigEntry{
+		CreationTime:           now.Add(-72 * time.Hour),
+		ProcessTime:            time.Time{},
+		DueTime:                now.Add(-1 * time.Hour),
+		WhatsappReminderConfig: duplicateConfig,
+	}
+	mockStore := &configstore.ConfigStoreMock{
+		ReadStore: []configstore.ConfigEntry{duplicateItem1, duplicateItem2},
+	}
+	mockReminder := &reminder.ReminderMock{}
+	service := NewReminderManagementService(mockStore, mockReminder, getDefaultRetention(t), *getDefaultTestLocation(t))
+
+	err := service.Process()
+	if err != nil {
+		t.Errorf("found error %+v", err)
+	}
+	// each row should be processed exactly once, not grouped together
+	processedCount := 0
+	for _, entry := range mockStore.ReadStore {
+		if !entry.ProcessTime.IsZero() {
+			processedCount++
+		}
+	}
+	if processedCount != len(mockStore.ReadStore) {
+		t.Errorf("expected all %d duplicate rows marked as processed, got %d", len(mockStore.ReadStore), processedCount)
+	}
+}
+
 func getDefaultTestLocation(t *testing.T) *time.Location {
 	location, err := time.LoadLocation("Europe/Berlin")
 
