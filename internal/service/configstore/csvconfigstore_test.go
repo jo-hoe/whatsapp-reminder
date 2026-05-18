@@ -98,7 +98,7 @@ func getTestConfig(t *testing.T) []ConfigEntry {
 }
 
 func getFileContent(t *testing.T, filepath string) string {
-	readfile, err := os.Open(filepath)
+	readfile, err := os.Open(filepath) //nolint:gosec
 	if err != nil {
 		t.Errorf("found error %+v", err)
 	}
