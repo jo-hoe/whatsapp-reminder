@@ -60,7 +60,9 @@ func (c *MailClient) send(addr string, request MailRequest) error {
 	if err != nil {
 		return fmt.Errorf("smtp new client: %w", err)
 	}
-	defer client.Close()
+	defer func() {
+		_ = client.Close()
+	}()
 
 	if err := c.negotiate(client); err != nil {
 		return err
