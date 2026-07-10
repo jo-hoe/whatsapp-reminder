@@ -83,11 +83,28 @@ config:
     # -- Path where the service account JSON file will be mounted
     serviceAccountFile: "/app/secrets/service-account.json"
   
-  # Email configuration (go-mail-service)
+  # Email configuration (SMTP)
   email:
-    # -- URL of the go-mail-service for sending emails
-    serviceUrl: "http://go-mail-service:80"
-    # originAddress and originName are now in secrets below
+    # -- SMTP server hostname
+    host: "go-mail-service.notify.svc.cluster.local"
+    # -- SMTP port (587 for STARTTLS, 25 for unauthenticated internal relays)
+    port: 587
+    # -- From address on outgoing messages
+    from: ""
+    # -- One or more recipient addresses
+    to: []
+    # -- Whether to negotiate STARTTLS after EHLO
+    startTLS: true
+    # -- Timeout for the SMTP dialog (Go duration format)
+    timeout: "30s"
+    # -- Authentication configuration
+    auth:
+      # -- Whether the SMTP server requires AUTH. Set to false for password-less internal relays.
+      required: true
+      # -- SMTP AUTH username. Ignored when auth.required is false.
+      username: ""
+      # -- SMTP AUTH password. Ignored when auth.required is false.
+      password: ""
   
   # Application configuration
   app:
@@ -102,12 +119,6 @@ config:
 secrets:
   # -- Service account JSON content as a base64-encoded string (recommended for CI/CD and .env files). This avoids shell escaping issues with special characters and literal \n in the private_key field. Provide the base64-encoded JSON, for example: --set secrets.serviceAccountJsonBase64=BASE64_ENCODED_JSON
   serviceAccountJsonBase64: ""
-  
+
   # -- Service account JSON content as a plain string (alternative to serviceAccountJsonBase64). Provide the entire JSON content as a single-line string, for example: --set secrets.serviceAccountJson='{"type":"service_account","project_id":"..."}'. Or use --set-file secrets.serviceAccountJson=./service-account.json. Note: This may have issues with special characters in shell environments.
   serviceAccountJson: ""
-  
-  # -- Email origin address (stored as secret for security). This is optional as the mail server sets a default. You can provide this via --set secrets.emailOriginAddress=your-email@example.com
-  emailOriginAddress: ""
-  
-  # -- Email origin name (stored as secret for security). This is optional as the mail server sets a default. You can provide this via --set secrets.emailOriginName="Your Name"
-  emailOriginName: ""

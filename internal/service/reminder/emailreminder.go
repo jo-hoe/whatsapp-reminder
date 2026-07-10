@@ -22,48 +22,55 @@ var mailItem string
 var mailEnd string
 
 type EmailReminderService struct {
-	mailClient    MailClientInterface
-	originAddress string
-	originName    string
-	ctx           context.Context
+	mailClient MailClientInterface
+	from       string
+	to         []string
+	ctx        context.Context
 }
 
 func NewEmailReminderService(
 	mailClient MailClientInterface,
-	originAddress,
-	originName string,
+	from string,
+	to []string,
 	ctx context.Context) *EmailReminderService {
 	return &EmailReminderService{
-		mailClient:    mailClient,
-		originAddress: originAddress,
-		originName:    originName,
-		ctx:           ctx,
+		mailClient: mailClient,
+		from:       from,
+		to:         to,
+		ctx:        ctx,
 	}
 }
 
 func (service *EmailReminderService) Remind(messageConfigs []dto.WhatsappReminderConfig) (result []dto.WhatsappReminderConfig) {
-	configsGroupedByMail := groupByMailAddress(messageConfigs)
+	log.Printf("sending emails to %d recipient(s) with %d total reminder(s)", len(service.to), len(messageConfigs))
 
-	totalRecipients := len(configsGroupedByMail)
-	log.Printf("sending emails to %d recipient(s) with %d total reminder(s)", totalRecipients, len(messageConfigs))
+	htmlContent := service.buildHtmlContent(messageConfigs)
 
 	result = make([]dto.WhatsappReminderConfig, 0)
 	successCount := 0
 	failureCount := 0
 
-	for mailAddress, configs := range configsGroupedByMail {
-		mailRequest := service.messageConfigsToMailRequest(configs)
-		log.Printf("sending %d reminder(s) to %s", len(configs), mailAddress)
-
-		_, err := service.mailClient.SendMail(service.ctx, mailRequest)
-		if err != nil {
-			failureCount += len(configs)
-			log.Printf("failed to send %d reminder(s) to %s: %v", len(configs), mailAddress, err)
-		} else {
-			successCount += len(configs)
-			log.Printf("successfully sent %d reminder(s) to %s", len(configs), mailAddress)
-			result = append(result, configs...)
+	for _, recipient := range service.to {
+		req := MailRequest{
+			To:          recipient,
+			Subject:     "WhatsApp Reminder",
+			HtmlContent: htmlContent,
+			From:        service.from,
 		}
+		log.Printf("sending %d reminder(s) to %s", len(messageConfigs), recipient)
+
+		err := service.mailClient.SendMail(service.ctx, req)
+		if err != nil {
+			failureCount += len(messageConfigs)
+			log.Printf("failed to send %d reminder(s) to %s: %v", len(messageConfigs), recipient, err)
+		} else {
+			successCount += len(messageConfigs)
+			log.Printf("successfully sent %d reminder(s) to %s", len(messageConfigs), recipient)
+		}
+	}
+
+	if successCount > 0 {
+		result = append(result, messageConfigs...)
 	}
 
 	log.Printf("email sending summary: %d successful, %d failed out of %d total reminder(s)",
@@ -72,35 +79,7 @@ func (service *EmailReminderService) Remind(messageConfigs []dto.WhatsappReminde
 	return result
 }
 
-func groupByMailAddress(messageConfigs []dto.WhatsappReminderConfig) map[string][]dto.WhatsappReminderConfig {
-	result := make(map[string][]dto.WhatsappReminderConfig, 0)
-
-	for _, messageConfig := range messageConfigs {
-		if _, ok := result[messageConfig.MailAddress]; !ok {
-			result[messageConfig.MailAddress] = make([]dto.WhatsappReminderConfig, 0)
-		}
-		result[messageConfig.MailAddress] = append(result[messageConfig.MailAddress], messageConfig)
-	}
-
-	return result
-}
-
-func (service *EmailReminderService) messageConfigsToMailRequest(messageConfigs []dto.WhatsappReminderConfig) MailRequest {
-	result := MailRequest{
-		To:      messageConfigs[0].MailAddress,
-		Subject: "WhatsApp Reminder",
-	}
-
-	// Only set From and FromName if they are provided (non-empty)
-	// If empty, the mail server will use its configured defaults
-	if service.originAddress != "" {
-		result.From = service.originAddress
-	}
-	if service.originName != "" {
-		result.FromName = service.originName
-	}
-
-	// build content
+func (service *EmailReminderService) buildHtmlContent(messageConfigs []dto.WhatsappReminderConfig) string {
 	var stringBuilder strings.Builder
 	stringBuilder.WriteString(mailStart)
 
@@ -108,7 +87,7 @@ func (service *EmailReminderService) messageConfigsToMailRequest(messageConfigs 
 		whatsappLink := whatsapp.CreateWhatsappLink(messageConfig.PhoneNumber, messageConfig.MessageText)
 
 		htmlEscapedText := html.EscapeString(messageConfig.MessageText)
-		if len(htmlEscapedText) > (61) {
+		if len(htmlEscapedText) > 61 {
 			htmlEscapedText = htmlEscapedText[:61] + "..."
 		}
 
@@ -120,7 +99,5 @@ func (service *EmailReminderService) messageConfigsToMailRequest(messageConfigs 
 		fmt.Fprintf(&stringBuilder, mailItem, whatsappLink, htmlEscapedText, number)
 	}
 	stringBuilder.WriteString(mailEnd)
-	result.HtmlContent = stringBuilder.String()
-
-	return result
+	return stringBuilder.String()
 }

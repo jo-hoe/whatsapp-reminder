@@ -37,12 +37,13 @@ start-k3d: start-cluster push-k3d ## start k3d cluster and deploy local code
 		--set config.googleSheets.spreadsheetId=$(SPREADSHEET_ID) \
 		--set-string config.googleSheets.sheetName="$(SHEET_NAME)" \
 		--set secrets.serviceAccountJsonBase64=$(SERVICE_ACCOUNT_JSON_BASE64) \
-		$(if $(EMAIL_ORIGIN_ADDRESS),--set secrets.emailOriginAddress=$(EMAIL_ORIGIN_ADDRESS),) \
-		$(if $(EMAIL_ORIGIN_NAME),--set-string secrets.emailOriginName="$(EMAIL_ORIGIN_NAME)",) \
+		$(if $(EMAIL_SMTP_HOST),--set config.email.host=$(EMAIL_SMTP_HOST),) \
+		$(if $(EMAIL_SMTP_PORT),--set config.email.port=$(EMAIL_SMTP_PORT),) \
+		$(if $(EMAIL_FROM),--set config.email.from=$(EMAIL_FROM),) \
+		$(if $(EMAIL_TO),--set config.email.to[0]=$(EMAIL_TO),) \
 		$(if $(SCHEDULE),--set-string schedule="$(SCHEDULE)",) \
 		$(if $(TIME_LOCATION),--set-string config.app.timeLocation="$(TIME_LOCATION)",) \
-		$(if $(RETENTION_TIME),--set config.app.retentionTime=$(RETENTION_TIME),) \
-		$(if $(EMAIL_SERVICE_URL),--set config.email.serviceUrl=$(EMAIL_SERVICE_URL),)
+		$(if $(RETENTION_TIME),--set config.app.retentionTime=$(RETENTION_TIME),)
 
 .PHONY: stop-k3d
 stop-k3d: ## stop K3d cluster

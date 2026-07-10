@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/jo-hoe/google-sheets/gs"
+	"github.com/jo-hoe/whatsapp-reminder/internal/config"
 	"github.com/jo-hoe/whatsapp-reminder/internal/service/configstore"
 	"github.com/jo-hoe/whatsapp-reminder/internal/service/management"
 	"github.com/jo-hoe/whatsapp-reminder/internal/service/reminder"
@@ -18,9 +19,7 @@ type AppConfig struct {
 	ServiceAccountSecret []byte
 	TimeLocation         *time.Location
 	RetentionTime        time.Duration
-	MailServiceURL       string
-	OriginAddress        string
-	OriginName           string
+	Email                config.EmailConfig
 }
 
 func Start(config *AppConfig) error {
@@ -33,8 +32,8 @@ func Start(config *AppConfig) error {
 	}
 
 	store := configstore.NewCSVConfigStore(readerCreation, writerCreation, *config.TimeLocation)
-	mailClient := reminder.NewMailClient(config.MailServiceURL, 30*time.Second)
-	reminderService := reminder.NewEmailReminderService(mailClient, config.OriginAddress, config.OriginName, config.Ctx)
+	mailClient := reminder.NewMailClient(config.Email)
+	reminderService := reminder.NewEmailReminderService(mailClient, config.Email.From, config.Email.To, config.Ctx)
 	manager := management.NewReminderManagementService(store, reminderService, config.RetentionTime, *config.TimeLocation)
 
 	return manager.Process()

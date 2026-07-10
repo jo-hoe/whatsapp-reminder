@@ -49,20 +49,6 @@ spec:
               env:
                 - name: CONFIG_PATH
                   value: /run/config/config.yaml
-                {{- if .Values.secrets.emailOriginAddress }}
-                - name: EMAIL_ORIGIN_ADDRESS
-                  valueFrom:
-                    secretKeyRef:
-                      name: {{ include "whatsapp-reminder.fullname" . }}-secret
-                      key: email-origin-address
-                {{- end }}
-                {{- if .Values.secrets.emailOriginName }}
-                - name: EMAIL_ORIGIN_NAME
-                  valueFrom:
-                    secretKeyRef:
-                      name: {{ include "whatsapp-reminder.fullname" . }}-secret
-                      key: email-origin-name
-                {{- end }}
               resources:
                 {{- toYaml .Values.resources | nindent 16 }}
               volumeMounts:

@@ -1,6 +1,6 @@
 # whatsapp-reminder
 
-![Version: 1.1.1](https://img.shields.io/badge/Version-1.1.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.1.1](https://img.shields.io/badge/AppVersion-1.1.1-informational?style=flat-square)
+![Version: 1.2.0](https://img.shields.io/badge/Version-1.2.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.2.0](https://img.shields.io/badge/AppVersion-1.2.0-informational?style=flat-square)
 
 A Helm chart for WhatsApp Reminder scheduled execution
 
@@ -12,7 +12,16 @@ A Helm chart for WhatsApp Reminder scheduled execution
 | config.app.logLevel | string | `"info"` | Log level for application (debug, info, warn, error) |
 | config.app.retentionTime | string | `"24h"` | How long to retain processed reminders (duration format: 24h, 48h, etc.) |
 | config.app.timeLocation | string | `"UTC"` | Timezone for reminder processing (IANA timezone format) |
-| config.email.serviceUrl | string | `"http://go-mail-service:80"` | URL of the go-mail-service for sending emails |
+| config.email.auth | object | `{"password":"","required":true,"username":""}` | Authentication configuration |
+| config.email.auth.password | string | `""` | SMTP AUTH password. Ignored when auth.required is false. |
+| config.email.auth.required | bool | `true` | Whether the SMTP server requires AUTH. Set to false for password-less internal relays. |
+| config.email.auth.username | string | `""` | SMTP AUTH username. Ignored when auth.required is false. |
+| config.email.from | string | `""` | From address on outgoing messages |
+| config.email.host | string | `"go-mail-service.notify.svc.cluster.local"` | SMTP server hostname |
+| config.email.port | int | `587` | SMTP port (587 for STARTTLS, 25 for unauthenticated internal relays) |
+| config.email.startTLS | bool | `true` | Whether to negotiate STARTTLS after EHLO |
+| config.email.timeout | string | `"30s"` | Timeout for the SMTP dialog (Go duration format) |
+| config.email.to | list | `[]` | One or more recipient addresses |
 | config.googleSheets.serviceAccountFile | string | `"/app/secrets/service-account.json"` | Path where the service account JSON file will be mounted |
 | config.googleSheets.sheetName | string | `""` | Name of the sheet within the spreadsheet |
 | config.googleSheets.spreadsheetId | string | `""` | Google Sheets spreadsheet ID to read reminder data from |
@@ -31,8 +40,6 @@ A Helm chart for WhatsApp Reminder scheduled execution
 | podSecurityContext | object | `{}` |  |
 | resources | object | `{}` |  |
 | schedule | string | `"0 * * * *"` | cron expression for scheduling of job (default: every hour) |
-| secrets.emailOriginAddress | string | `""` |  |
-| secrets.emailOriginName | string | `""` |  |
 | secrets.serviceAccountJson | string | `""` |  |
 | secrets.serviceAccountJsonBase64 | string | `""` |  |
 | securityContext | object | `{}` |  |

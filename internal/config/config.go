@@ -30,10 +30,20 @@ type GoogleSheetsConfig struct {
 	ServiceAccountFile string `yaml:"serviceAccountFile"`
 }
 
+type SMTPAuthConfig struct {
+	Required bool   `yaml:"required"`
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
+}
+
 type EmailConfig struct {
-	ServiceURL    string `yaml:"serviceUrl"`
-	OriginAddress string `yaml:"originAddress,omitempty"`
-	OriginName    string `yaml:"originName,omitempty"`
+	Host     string         `yaml:"host"`
+	Port     int            `yaml:"port"`
+	From     string         `yaml:"from"`
+	To       []string       `yaml:"to"`
+	Auth     SMTPAuthConfig `yaml:"auth"`
+	StartTLS bool           `yaml:"startTLS"`
+	Timeout  time.Duration  `yaml:"timeout"`
 }
 
 type ScheduleConfig struct {
@@ -81,6 +91,12 @@ func LoadConfig(configPath string) (*Config, error) {
 	if config.App.LogLevel == "" {
 		config.App.LogLevel = "info"
 	}
+	if config.Email.Port == 0 {
+		config.Email.Port = 587
+	}
+	if config.Email.Timeout == 0 {
+		config.Email.Timeout = 30 * time.Second
+	}
 
 	// Validate required fields
 	if err := config.validate(); err != nil {
@@ -101,10 +117,18 @@ func (c *Config) validate() error {
 	if c.GoogleSheets.ServiceAccountFile == "" {
 		return fmt.Errorf("googleSheets.serviceAccountFile is required")
 	}
-	if c.Email.ServiceURL == "" {
-		return fmt.Errorf("email.serviceUrl is required")
+	if c.Email.Host == "" {
+		return fmt.Errorf("email.host is required")
 	}
-	// Email origin address and name are optional - mailserver will use its defaults if not provided
+	if c.Email.Port == 0 {
+		return fmt.Errorf("email.port is required")
+	}
+	if c.Email.From == "" {
+		return fmt.Errorf("email.from is required")
+	}
+	if len(c.Email.To) == 0 {
+		return fmt.Errorf("email.to must have at least one recipient")
+	}
 
 	// Validate duration formats
 	if _, err := time.ParseDuration(c.Schedule.Interval); err != nil {
@@ -129,22 +153,4 @@ func (c *Config) GetServiceAccountSecret() ([]byte, error) {
 		return nil, fmt.Errorf("failed to read service account file %s: %w", c.GoogleSheets.ServiceAccountFile, err)
 	}
 	return data, nil
-}
-
-// GetEmailOriginAddress returns the email origin address from config or env var
-// Environment variable takes precedence over config file
-func (c *Config) GetEmailOriginAddress() string {
-	if addr := os.Getenv("EMAIL_ORIGIN_ADDRESS"); addr != "" {
-		return addr
-	}
-	return c.Email.OriginAddress
-}
-
-// GetEmailOriginName returns the email origin name from config or env var
-// Environment variable takes precedence over config file
-func (c *Config) GetEmailOriginName() string {
-	if name := os.Getenv("EMAIL_ORIGIN_NAME"); name != "" {
-		return name
-	}
-	return c.Email.OriginName
 }

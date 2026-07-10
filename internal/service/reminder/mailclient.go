@@ -2,83 +2,117 @@ package reminder
 
 import (
 	"context"
-	"time"
+	"crypto/tls"
+	"fmt"
+	"net"
+	"net/smtp"
 
-	mailclient "github.com/jo-hoe/go-mail-service/pkg/client"
+	"github.com/jo-hoe/whatsapp-reminder/internal/config"
 )
 
 // MailClientInterface defines the interface for mail clients
 type MailClientInterface interface {
-	SendMail(ctx context.Context, request MailRequest) (*MailResponse, error)
-	HealthCheck(ctx context.Context) error
+	SendMail(ctx context.Context, request MailRequest) error
 }
 
-// MailClient is a wrapper around the go-mail-service client
-type MailClient struct {
-	client *mailclient.Client
-}
-
-// MailRequest represents the request to send an email
+// MailRequest represents the data needed to send an email
 type MailRequest struct {
-	To          string `json:"to"`
-	Subject     string `json:"subject"`
-	HtmlContent string `json:"content"`
-	From        string `json:"from,omitempty"`
-	FromName    string `json:"fromName,omitempty"`
+	To          string
+	Subject     string
+	HtmlContent string
+	From        string
 }
 
-// MailResponse represents the response from sending an email
-type MailResponse struct {
-	To          string `json:"to"`
-	Subject     string `json:"subject"`
-	HtmlContent string `json:"content"`
-	From        string `json:"from,omitempty"`
-	FromName    string `json:"fromName,omitempty"`
+// MailClient sends email via SMTP
+type MailClient struct {
+	cfg config.EmailConfig
 }
 
-// NewMailClient creates a new mail service client using the official go-mail-service client library
-func NewMailClient(baseURL string, timeout time.Duration) *MailClient {
-	if timeout == 0 {
-		timeout = 30 * time.Second
-	}
+// NewMailClient creates a new SMTP mail client
+func NewMailClient(cfg config.EmailConfig) *MailClient {
+	return &MailClient{cfg: cfg}
+}
 
-	client := mailclient.NewClient(baseURL, mailclient.WithTimeout(timeout))
+// SendMail sends an HTML email over SMTP, respecting context cancellation
+func (c *MailClient) SendMail(ctx context.Context, request MailRequest) error {
+	addr := fmt.Sprintf("%s:%d", c.cfg.Host, c.cfg.Port)
 
-	return &MailClient{
-		client: client,
+	done := make(chan error, 1)
+	go func() {
+		done <- c.send(addr, request)
+	}()
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case err := <-done:
+		return err
 	}
 }
 
-// SendMail sends an email using the mail service
-func (c *MailClient) SendMail(ctx context.Context, request MailRequest) (*MailResponse, error) {
-	// Convert our MailRequest to the library's MailRequest
-	libRequest := mailclient.MailRequest{
-		To:          request.To,
-		Subject:     request.Subject,
-		HtmlContent: request.HtmlContent,
-		From:        request.From,
-		FromName:    request.FromName,
-	}
-
-	// Call the library's SendMail method
-	libResponse, err := c.client.SendMail(ctx, libRequest)
+func (c *MailClient) send(addr string, request MailRequest) error {
+	conn, err := net.DialTimeout("tcp", addr, c.cfg.Timeout)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("smtp dial: %w", err)
 	}
 
-	// Convert the library's response to our MailResponse
-	response := &MailResponse{
-		To:          libResponse.To,
-		Subject:     libResponse.Subject,
-		HtmlContent: libResponse.HtmlContent,
-		From:        libResponse.From,
-		FromName:    libResponse.FromName,
+	client, err := smtp.NewClient(conn, c.cfg.Host)
+	if err != nil {
+		return fmt.Errorf("smtp new client: %w", err)
+	}
+	defer client.Close()
+
+	if err := c.negotiate(client); err != nil {
+		return err
 	}
 
-	return response, nil
+	if err := client.Mail(request.From); err != nil {
+		return fmt.Errorf("smtp MAIL FROM: %w", err)
+	}
+	if err := client.Rcpt(request.To); err != nil {
+		return fmt.Errorf("smtp RCPT TO: %w", err)
+	}
+
+	return c.writeBody(client, request)
 }
 
-// HealthCheck performs a health check against the mail service
-func (c *MailClient) HealthCheck(ctx context.Context) error {
-	return c.client.HealthCheck(ctx)
+func (c *MailClient) negotiate(client *smtp.Client) error {
+	if c.cfg.StartTLS {
+		tlsCfg := &tls.Config{
+			ServerName: c.cfg.Host,
+			MinVersion: tls.VersionTLS12,
+		}
+		if err := client.StartTLS(tlsCfg); err != nil {
+			return fmt.Errorf("smtp starttls: %w", err)
+		}
+	}
+
+	if c.cfg.Auth.Required {
+		auth := smtp.PlainAuth("", c.cfg.Auth.Username, c.cfg.Auth.Password, c.cfg.Host)
+		if err := client.Auth(auth); err != nil {
+			return fmt.Errorf("smtp auth: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func (c *MailClient) writeBody(client *smtp.Client, r MailRequest) error {
+	w, err := client.Data()
+	if err != nil {
+		return fmt.Errorf("smtp DATA: %w", err)
+	}
+
+	msg := fmt.Sprintf(
+		"From: %s\r\nTo: %s\r\nSubject: %s\r\nMIME-Version: 1.0\r\nContent-Type: text/html; charset=\"UTF-8\"\r\n\r\n%s",
+		r.From, r.To, r.Subject, r.HtmlContent,
+	)
+	if _, err := fmt.Fprint(w, msg); err != nil {
+		return fmt.Errorf("smtp write body: %w", err)
+	}
+	if err := w.Close(); err != nil {
+		return fmt.Errorf("smtp close data: %w", err)
+	}
+
+	return client.Quit()
 }

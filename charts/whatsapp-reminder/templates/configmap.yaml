@@ -11,7 +11,19 @@ data:
       sheetName: {{ .Values.config.googleSheets.sheetName | quote }}
       serviceAccountFile: {{ .Values.config.googleSheets.serviceAccountFile | quote }}
     email:
-      serviceUrl: {{ .Values.config.email.serviceUrl | quote }}
+      host: {{ .Values.config.email.host | quote }}
+      port: {{ .Values.config.email.port }}
+      from: {{ .Values.config.email.from | quote }}
+      to:
+        {{- range .Values.config.email.to }}
+        - {{ . | quote }}
+        {{- end }}
+      startTLS: {{ .Values.config.email.startTLS }}
+      timeout: {{ .Values.config.email.timeout | quote }}
+      auth:
+        required: {{ .Values.config.email.auth.required }}
+        username: {{ .Values.config.email.auth.username | quote }}
+        password: {{ .Values.config.email.auth.password | quote }}
     app:
       timeLocation: {{ .Values.config.app.timeLocation | quote }}
       retentionTime: {{ .Values.config.app.retentionTime | quote }}
