@@ -10,5 +10,5 @@ require (
 require (
 	cloud.google.com/go/compute/metadata v0.10.0 // indirect
 	golang.org/x/oauth2 v0.37.0 // indirect
-	golang.org/x/sys v0.48.0 // indirect
+	golang.org/x/sys v0.49.0 // indirect
 )
